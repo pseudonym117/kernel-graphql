@@ -2,12 +2,21 @@ from graphene import Boolean, Field, Int, List, ObjectType, String, Schema
 
 from riotwatcher import RiotWatcher
 
+from .riot_graphene.Champion import ChampionInfo
 from .riot_graphene.LolStatus import ShardStatus
 from .riot_graphene.Summoner import Summoner
 
 class Query(ObjectType):
+    champion_rotation = Field(ChampionInfo, region=String())
     status = Field(ShardStatus, region=String())
     summoner = Field(Summoner, region=String(), name=String(required=False), encrypted_account_id=String(required=False), encrypted_puuid=String(required=False), encrypted_summoner_id=String(required=False))
+
+    def resolve_champion_rotation(root, info, region):
+        watcher: RiotWatcher = info.context
+
+        champs = watcher.champion.rotations(region)
+
+        return ChampionInfo(champs)
 
     def resolve_status(root, info, region):
         watcher: RiotWatcher = info.context
