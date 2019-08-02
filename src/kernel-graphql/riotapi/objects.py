@@ -14,7 +14,7 @@ class Query(ObjectType):
 
         shard = watcher.lol_status.shard_data(region=region)
 
-        return ShardStatus.build_from_dict(shard)
+        return ShardStatus(shard)
     
     def resolve_summoner(root, info, region, name=None, encrypted_account_id=None, encrypted_puuid=None, encrypted_summoner_id=None):
         watcher: RiotWatcher = info.context
@@ -30,6 +30,6 @@ class Query(ObjectType):
         else:
             raise ValueError('some identified must be defined')
         
-        return Summoner.build_from_dict(summoner)
+        return Summoner(summoner)
 
 schema = Schema(query=Query)
