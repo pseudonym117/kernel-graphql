@@ -8,7 +8,7 @@ RUN pip install pipenv
 WORKDIR /app
 COPY ./Pipfile* /app/
 
-RUN pipenv install --ignore-pipfile
+RUN pipenv install --deploy
 
 COPY ./src /app/src
 

@@ -4,13 +4,18 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+black = "*"
+pylint = "*"
 
 [packages]
 flask = "*"
-graphene = "*"
+graphene = "<3.0.0"
 riotwatcher = "*"
 flask-graphql = "*"
 python-dotenv = "*"
 
 [requires]
 python_version = "3.7"
+
+[pipenv]
+allow_prereleases = true
