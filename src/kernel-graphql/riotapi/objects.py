@@ -5,11 +5,13 @@ from riotwatcher import RiotWatcher
 from .riot_graphene.Champion import ChampionInfo
 from .riot_graphene.League import ApexLeagueType, LeagueList, RankedQueue
 from .riot_graphene.LolStatus import ShardStatus
+from .riot_graphene.Spectator import FeaturedGames
 from .riot_graphene.Summoner import Summoner
 
 
 class Query(ObjectType):
-    champion_rotation = Field(ChampionInfo, region=String())
+    championRotation = Field(ChampionInfo, region=String())
+    featuredGames = Field(FeaturedGames, region=String())
     league = Field(
         LeagueList,
         region=String(),
@@ -27,17 +29,22 @@ class Query(ObjectType):
         encrypted_summoner_id=String(required=False),
     )
 
-    @staticmethod
-    def resolve_champion_rotation(root, info, region):
+    def resolve_championRotation(self, info, region: str):
         watcher: RiotWatcher = info.context
 
         champs = watcher.champion.rotations(region)
 
         return ChampionInfo(region, champs)
 
-    @staticmethod
+    def resolve_featuredGames(self, info, region: str):
+        watcher: RiotWatcher = info.context
+
+        games = watcher.spectator.featured_games(region)
+
+        return FeaturedGames(region, games)
+
     def resolve_league(
-        root,
+        self,
         info,
         region: str,
         tier: int = None,
@@ -65,23 +72,21 @@ class Query(ObjectType):
 
         return LeagueList(region, leagues)
 
-    @staticmethod
-    def resolve_status(root, info, region):
+    def resolve_status(self, info, region: str):
         watcher: RiotWatcher = info.context
 
         shard = watcher.lol_status.shard_data(region=region)
 
         return ShardStatus(region, shard)
 
-    @staticmethod
     def resolve_summoner(
-        root,
+        self,
         info,
-        region,
-        name=None,
-        encrypted_account_id=None,
-        encrypted_puuid=None,
-        encrypted_summoner_id=None,
+        region: str,
+        name: str = None,
+        encrypted_account_id: str = None,
+        encrypted_puuid: str = None,
+        encrypted_summoner_id: str = None,
     ):
         watcher: RiotWatcher = info.context
 

@@ -16,6 +16,10 @@ class Summoner(RiotGrapheneObject):
 
     leagues = Field(List(lambda: LeagueEntry))
     currentGame = Field(lambda: CurrentGameInfo)
+    championMasteryScore = Int()
+    championMasteries = List(lambda: ChampionMastery)
+    championMastery = Field(lambda: ChampionMastery, championId=Int())
+    thirdPartyCode = String()
 
     def resolve_leagues(self, info):
         watcher: RiotWatcher = info.context
@@ -39,6 +43,38 @@ class Summoner(RiotGrapheneObject):
             raise
         return CurrentGameInfo(self.region, game)
 
+    def resolve_championMasteryScore(self, info):
+        watcher: RiotWatcher = info.context
 
+        return watcher.champion_mastery.scores_by_summoner(self.region, self.id)
+
+    def resolve_championMasteries(self, info):
+        watcher: RiotWatcher = info.context
+
+        masteries = watcher.champion_mastery.by_summoner(self.region, self.id)
+
+        return [ChampionMastery(self.region, mastery) for mastery in masteries]
+
+    def resolve_championMastery(self, info, championId):
+        watcher: RiotWatcher = info.context
+
+        mastery = watcher.champion_mastery.by_summoner_by_champion(
+            self.region, self.id, championId
+        )
+
+        return ChampionMastery(self.region, mastery)
+
+    def resolve_thirdPartyCode(self, info):
+        watcher: RiotWatcher = info.context
+
+        try:
+            return watcher.third_party_code.by_summoner(self.region, self.id)
+        except ApiError as e:
+            if e.response.status_code == 404:
+                return None
+            raise
+
+
+from .ChampionMastery import ChampionMastery
 from .League import LeagueEntry
 from .Spectator import CurrentGameInfo

@@ -27,20 +27,32 @@ class Perks(RiotGrapheneObject):
     perkSubStyle = Int()
 
 
-class CurrentGameParticipant(RiotGrapheneObject):
+class Participant(RiotGrapheneObject):
     profileIconId = Int()
     championId = Int()
     summonerName = String()
-    gameCustomizationObjects = List(GameCustomizationObject)
     bot = Boolean()
-    perks = Field(Perks)
     spell2Id = Int()
     teamId = Int()
     spell1Id = Int()
+
+    summoner = Field(lambda: Summoner)
+
+    def resolve_summoner(self, info):
+        watcher: RiotWatcher = info.context
+
+        summ = watcher.summoner.by_name(self.region, self.summonerName)
+
+        return Summoner(self.region, summ)
+
+
+class CurrentGameParticipant(Participant):
+    gameCustomizationObjects = List(GameCustomizationObject)
+    perks = Field(Perks)
     summonerId = String()
 
 
-class CurrentGameInfo(RiotGrapheneObject):
+class GameInfo(RiotGrapheneObject):
     gameId = Int()
     gameStartTime = Int()
     platformId = String()
@@ -49,6 +61,21 @@ class CurrentGameInfo(RiotGrapheneObject):
     gameType = String()
     bannedChampions = List(BannedChampion)
     observers = Field(Observer)
-    participants = List(CurrentGameParticipant)
     gameLength = Int()
     gameQueueConfigId = Int()
+
+
+class CurrentGameInfo(GameInfo):
+    participants = List(CurrentGameParticipant)
+
+
+class FeaturedGameInfo(GameInfo):
+    participants = List(Participant)
+
+
+class FeaturedGames(RiotGrapheneObject):
+    clientRefreshInterval = Int()
+    gameList = List(FeaturedGameInfo)
+
+
+from .Summoner import Summoner
