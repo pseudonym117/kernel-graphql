@@ -1,10 +1,11 @@
 from graphene import Boolean, Field, Int, List, ObjectType, String, Schema
 
-from riotwatcher import RiotWatcher
+from riotwatcher import RiotWatcher, ApiError
 
 from .riot_graphene.Champion import ChampionInfo
 from .riot_graphene.League import ApexLeagueType, LeagueList, RankedQueue
 from .riot_graphene.LolStatus import ShardStatus
+from .riot_graphene.Match import Match
 from .riot_graphene.Spectator import FeaturedGames
 from .riot_graphene.Summoner import Summoner
 
@@ -17,16 +18,17 @@ class Query(ObjectType):
         region=String(),
         tier=ApexLeagueType(required=False),
         queue=RankedQueue(required=False),
-        league_id=String(required=False),
+        leagueId=String(required=False),
     )
+    match = Field(Match, region=String(), matchId=String())
     status = Field(ShardStatus, region=String())
     summoner = Field(
         Summoner,
         region=String(),
         name=String(required=False),
-        encrypted_account_id=String(required=False),
-        encrypted_puuid=String(required=False),
-        encrypted_summoner_id=String(required=False),
+        accountId=String(required=False),
+        puuid=String(required=False),
+        summonerId=String(required=False),
     )
 
     def resolve_championRotation(self, info, region: str):
@@ -49,12 +51,12 @@ class Query(ObjectType):
         region: str,
         tier: int = None,
         queue: int = None,
-        league_id: str = None,
+        leagueId: str = None,
     ):
         watcher: RiotWatcher = info.context
 
-        if league_id:
-            leagues = watcher.league.by_id(region, league_id)
+        if leagueId:
+            leagues = watcher.league.by_id(region, leagueId)
         else:
             if not queue or not tier:
                 raise ValueError("both queue and tier must be provided")
@@ -72,6 +74,18 @@ class Query(ObjectType):
 
         return LeagueList(region, leagues)
 
+    def resolve_match(self, info, region: str, matchId: str):
+        watcher: RiotWatcher = info.context
+
+        try:
+            match = watcher.match.by_id(region, matchId)
+
+            return Match(region, match)
+        except ApiError as e:
+            if e.response.status_code == 404:
+                return None
+            raise
+
     def resolve_status(self, info, region: str):
         watcher: RiotWatcher = info.context
 
@@ -84,18 +98,18 @@ class Query(ObjectType):
         info,
         region: str,
         name: str = None,
-        encrypted_account_id: str = None,
-        encrypted_puuid: str = None,
-        encrypted_summoner_id: str = None,
+        accountId: str = None,
+        puuid: str = None,
+        summonerId: str = None,
     ):
         watcher: RiotWatcher = info.context
 
-        if encrypted_puuid:
-            summoner = watcher.summoner.by_puuid(region, encrypted_puuid)
-        elif encrypted_account_id:
-            summoner = watcher.summoner.by_account(region, encrypted_account_id)
-        elif encrypted_summoner_id:
-            summoner = watcher.summoner.by_id(region, encrypted_summoner_id)
+        if puuid:
+            summoner = watcher.summoner.by_puuid(region, puuid)
+        elif accountId:
+            summoner = watcher.summoner.by_account(region, accountId)
+        elif summonerId:
+            summoner = watcher.summoner.by_id(region, summonerId)
         elif name:
             summoner = watcher.summoner.by_name(region, name)
         else:

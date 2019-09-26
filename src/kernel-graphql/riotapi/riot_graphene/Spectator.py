@@ -27,7 +27,7 @@ class Perks(RiotGrapheneObject):
     perkSubStyle = Int()
 
 
-class Participant(RiotGrapheneObject):
+class BaseParticipant(RiotGrapheneObject):
     profileIconId = Int()
     championId = Int()
     summonerName = String()
@@ -46,7 +46,7 @@ class Participant(RiotGrapheneObject):
         return Summoner(self.region, summ)
 
 
-class CurrentGameParticipant(Participant):
+class CurrentGameParticipant(BaseParticipant):
     gameCustomizationObjects = List(GameCustomizationObject)
     perks = Field(Perks)
     summonerId = String()
@@ -70,7 +70,7 @@ class CurrentGameInfo(GameInfo):
 
 
 class FeaturedGameInfo(GameInfo):
-    participants = List(Participant)
+    participants = List(BaseParticipant)
 
 
 class FeaturedGames(RiotGrapheneObject):
